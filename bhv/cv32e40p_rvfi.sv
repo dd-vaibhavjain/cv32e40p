@@ -1459,6 +1459,7 @@ module cv32e40p_rvfi
         mtvec_to_id();
 
         `CSR_FROM_PIPE(id, mip)
+        `CSR_FROM_PIPE(id, misa)
 
         if (!csr_is_irq && !s_is_irq_start) begin
           mstatus_to_id();
