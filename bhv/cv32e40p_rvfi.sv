@@ -643,6 +643,7 @@ module cv32e40p_rvfi
         end
       end
     end
+    trace_q_size = wb_bypass_trace_q.size();  //Re-calculate here for accurate status
   endfunction
   /*
    * Function used to alocate a new insn and send it to the rvfi driver
@@ -1428,7 +1429,12 @@ module cv32e40p_rvfi
               minstret_to_ex();
             end
             ->e_ex_to_wb_1;
-            trace_wb.move_down_pipe(trace_ex);
+            if(trace_ex.m_is_load || trace_ex.m_is_apu) begin  //clean trace_wb by only moving actual instr in wb stage
+              trace_wb.move_down_pipe(trace_ex);
+            end else begin
+              minstret_to_ex();
+              send_rvfi(trace_ex);
+            end
             trace_ex.m_valid = 1'b0;
           end
         end else if (r_pipe_freeze_trace.rf_we_wb) begin
@@ -1573,7 +1579,10 @@ module cv32e40p_rvfi
               ->e_send_rvfi_trace_ex_4;
             end else begin
               ->e_ex_to_wb_2;
-              trace_wb.move_down_pipe(trace_ex);
+              if(trace_ex.m_is_load || trace_ex.m_is_apu)  //clean trace_wb by only moving actual instr in wb stage
+                trace_wb.move_down_pipe(trace_ex);
+              else
+                send_rvfi(trace_ex);
             end
             trace_ex.m_valid = 1'b0;
           end
