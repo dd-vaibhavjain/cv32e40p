@@ -694,6 +694,7 @@ module cv32e40p_rvfi
   logic [31:0] s_frm_mirror;
   logic [31:0] s_fcsr_mirror;
   logic [31:0] r_previous_minstret;
+  logic [31:0] r_last_order;
 
   function void set_rvfi();
     insn_trace_t new_rvfi_trace;
@@ -760,12 +761,20 @@ module cv32e40p_rvfi
     //Trying something here
     //Flag as trap everytime minstret is not incremented
 
-    if (new_rvfi_trace.m_instret_cnt == r_previous_minstret) begin
-      // new_rvfi_trace.m_trap = 1'b0;
-      new_rvfi_trace.m_trap = 1'b1;
-    end else begin
-      r_previous_minstret   = new_rvfi_trace.m_instret_cnt;
-      new_rvfi_trace.m_trap = 1'b0;
+    if(!new_rvfi_trace.m_trap) begin
+      if (new_rvfi_trace.m_instret_cnt == r_previous_minstret) begin
+        // new_rvfi_trace.m_trap = 1'b0;
+        //new_rvfi_trace.m_trap = 1'b1;
+        if(r_last_order == new_rvfi_trace.m_instret_cnt)
+          new_rvfi_trace.m_trap = 1'b1;
+        else begin
+          r_last_order = new_rvfi_trace.m_order;
+          new_rvfi_trace.m_trap = 1'b0;
+        end
+      end else begin
+        r_previous_minstret   = new_rvfi_trace.m_instret_cnt;
+        new_rvfi_trace.m_trap = 1'b0;
+      end
     end
 
     rvfi_rs1_addr    = '0;
