@@ -185,6 +185,7 @@
       `INIT_CSR(lpcount0 )
       `INIT_CSR(lpstart1 )
       `INIT_CSR(lpend1   )
+      `INIT_CSR(lpcount1 )
     endfunction
     /*
      *
