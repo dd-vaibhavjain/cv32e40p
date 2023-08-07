@@ -1120,7 +1120,7 @@ module cv32e40p_rvfi
    */
   `define CSR_FROM_PIPE(TRACE_NAME,
                         CSR_NAME) \
-    if(r_pipe_freeze_trace.csr.``CSR_NAME``_we) begin \
+    if(r_pipe_freeze_trace.csr.``CSR_NAME``_we || r_pipe_freeze_trace.csr.we) begin \
       trace_``TRACE_NAME``.m_csr.``CSR_NAME``_we      = r_pipe_freeze_trace.csr.``CSR_NAME``_we; \
       trace_``TRACE_NAME``.m_csr.``CSR_NAME``_wdata   = r_pipe_freeze_trace.csr.``CSR_NAME``_n; \
       trace_``TRACE_NAME``.m_csr.``CSR_NAME``_wmask   = '1; \
@@ -1459,8 +1459,8 @@ module cv32e40p_rvfi
             if (!s_ex_valid_adjusted & !trace_ex.m_csr.got_minstret) begin
               minstret_to_ex();
             end
-            ->e_ex_to_wb_1;
             if(trace_ex.m_is_load || trace_ex.m_is_apu) begin  //clean trace_wb by only moving actual instr in wb stage
+              ->e_ex_to_wb_1;
               trace_wb.move_down_pipe(trace_ex);
             end else begin
               minstret_to_ex();
@@ -1615,11 +1615,13 @@ module cv32e40p_rvfi
               send_rvfi(trace_ex);
               ->e_send_rvfi_trace_ex_4;
             end else begin
-              ->e_ex_to_wb_2;
-              if(trace_ex.m_is_load || trace_ex.m_is_apu)  //clean trace_wb by only moving actual instr in wb stage
+              if(trace_ex.m_is_load || trace_ex.m_is_apu) begin //clean trace_wb by only moving actual instr in wb stage
+                ->e_ex_to_wb_2;
                 trace_wb.move_down_pipe(trace_ex);
-              else
+              end
+              else begin
                 send_rvfi(trace_ex);
+              end
             end
             trace_ex.m_valid = 1'b0;
           end
