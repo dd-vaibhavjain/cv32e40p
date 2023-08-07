@@ -693,8 +693,8 @@ module cv32e40p_rvfi
   logic [31:0] s_fflags_mirror;
   logic [31:0] s_frm_mirror;
   logic [31:0] s_fcsr_mirror;
+  logic [31:0] s_mstatus_sd_fs_mirror;
   logic [31:0] r_previous_minstret;
-  logic [31:0] r_last_order;
 
   function void set_rvfi();
     insn_trace_t new_rvfi_trace;
@@ -716,11 +716,21 @@ module cv32e40p_rvfi
       end else begin
         s_fcsr_mirror = new_rvfi_trace.m_csr.fcsr_rdata;
       end
+      if (new_rvfi_trace.m_csr.mstatus_we) begin
+        s_mstatus_sd_fs_mirror = new_rvfi_trace.m_csr.mstatus_wdata & 32'h8000_6000;
+      end else begin
+        s_mstatus_sd_fs_mirror = new_rvfi_trace.m_csr.mstatus_rdata & 32'h8000_6000;
+      end
 
     end else begin
       new_rvfi_trace.m_csr.fflags_rdata = s_fflags_mirror;
       new_rvfi_trace.m_csr.frm_rdata = s_frm_mirror;
       new_rvfi_trace.m_csr.fcsr_rdata = s_fcsr_mirror;
+      if(s_mstatus_sd_fs_mirror != 32'h0) begin
+        new_rvfi_trace.m_csr.mstatus_wdata = new_rvfi_trace.m_csr.mstatus_wdata | s_mstatus_sd_fs_mirror;
+        new_rvfi_trace.m_csr.mstatus_wmask = 32'hFFFF_FFFF;
+        s_mstatus_sd_fs_mirror = 32'h0;  // Reset mirror
+      end
       if (new_rvfi_trace.m_fflags_we_non_apu) begin
         s_fflags_mirror = new_rvfi_trace.m_csr.fflags_wdata;
         s_fcsr_mirror = new_rvfi_trace.m_csr.fcsr_wdata;
@@ -764,13 +774,7 @@ module cv32e40p_rvfi
     if(!new_rvfi_trace.m_trap) begin
       if (new_rvfi_trace.m_instret_cnt == r_previous_minstret) begin
         // new_rvfi_trace.m_trap = 1'b0;
-        //new_rvfi_trace.m_trap = 1'b1;
-        if(r_last_order == new_rvfi_trace.m_instret_cnt)
-          new_rvfi_trace.m_trap = 1'b1;
-        else begin
-          r_last_order = new_rvfi_trace.m_order;
-          new_rvfi_trace.m_trap = 1'b0;
-        end
+        new_rvfi_trace.m_trap = 1'b1;
       end else begin
         r_previous_minstret   = new_rvfi_trace.m_instret_cnt;
         new_rvfi_trace.m_trap = 1'b0;
