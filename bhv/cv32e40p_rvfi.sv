@@ -1420,7 +1420,9 @@ module cv32e40p_rvfi
 
       if (trace_ex.m_valid) begin
 
-        minstret_to_ex();
+        if (!trace_ex.m_csr.got_minstret) begin
+          minstret_to_ex();
+        end
         `CSR_FROM_PIPE(ex, misa)
         `CSR_FROM_PIPE(ex, tdata1)
         tinfo_to_ex();
@@ -1429,6 +1431,7 @@ module cv32e40p_rvfi
           if((cnt_data_resp == trace_ex.m_mem_req_id[0]) && !(trace_id.m_got_ex_reg)) begin
             trace_ex.m_rd_addr[0]  = r_pipe_freeze_trace.rf_addr_wb;
             trace_ex.m_rd_wdata[0] = r_pipe_freeze_trace.rf_wdata_wb;
+            trace_ex.m_got_first_data = 1'b1;
           end else if (cnt_data_resp == trace_ex.m_mem_req_id[1]) begin
             trace_ex.m_rd_addr[1]  = r_pipe_freeze_trace.rf_addr_wb;
             trace_ex.m_rd_wdata[1] = r_pipe_freeze_trace.rf_wdata_wb;
@@ -1463,7 +1466,9 @@ module cv32e40p_rvfi
               ->e_ex_to_wb_1;
               trace_wb.move_down_pipe(trace_ex);
             end else begin
-              minstret_to_ex();
+              if (!trace_ex.m_csr.got_minstret) begin
+                minstret_to_ex();
+              end
               send_rvfi(trace_ex);
             end
             trace_ex.m_valid = 1'b0;
@@ -1610,7 +1615,9 @@ module cv32e40p_rvfi
       if (s_new_valid_insn) begin  // There is a new valid instruction
         if (trace_id.m_valid) begin
           if (trace_ex.m_valid) begin
-            minstret_to_ex();
+            if (!trace_ex.m_csr.got_minstret) begin
+              minstret_to_ex();
+            end
             if (trace_wb.m_valid) begin
               send_rvfi(trace_ex);
               ->e_send_rvfi_trace_ex_4;
